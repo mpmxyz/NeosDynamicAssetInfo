@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{aafc1e62-9670-4463-8a5a-26ae487067f2}") = "NeosDynamicAssetInfo", "NeosDynamicAssetInfo\NeosDynamicAssetInfo.csproj", "{cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}"
+EndProject
+Project("{aafc1e62-9670-4463-8a5a-26ae487067f2}") = "Test", "Test\Test.csproj", "{68d0842d-9b70-4342-8189-de2e4368ebe5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14} = {cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68d0842d-9b70-4342-8189-de2e4368ebe5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68d0842d-9b70-4342-8189-de2e4368ebe5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68d0842d-9b70-4342-8189-de2e4368ebe5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68d0842d-9b70-4342-8189-de2e4368ebe5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {cdd1a1e8-c3d5-4a85-a0be-9b41dc7eaf14}
+	EndGlobalSection
+EndGlobal
