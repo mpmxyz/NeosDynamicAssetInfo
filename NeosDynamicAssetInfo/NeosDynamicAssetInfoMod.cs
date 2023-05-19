@@ -47,7 +47,7 @@ namespace NeosDynamicAssetInfo
             foreach (IAssetProvider asset in allAssets)
             {
                 AttachReference(dv_slot, dv_space, ASSET_PREFIX + i, asset);
-                
+
                 foreach (Type assetType in EnumerateAllGenericInterfaceVariants(asset.GetType(), typeof(IAssetProvider<>)))
                 {
                     typeof(NeosDynamicAssetInfoMod)

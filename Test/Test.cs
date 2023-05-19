@@ -7,8 +7,7 @@ namespace NeosAssetImportHook
         [Fact]
         public void TestCase()
         {
-            
-        }
 
+        }
     }
 }
