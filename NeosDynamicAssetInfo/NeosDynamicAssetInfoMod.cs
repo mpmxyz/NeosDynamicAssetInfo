@@ -1,6 +1,5 @@
 ﻿using BaseX;
 using FrooxEngine;
-using HarmonyLib;
 using NeosAssetImportHook;
 using NeosModLoader;
 using System;
@@ -15,7 +14,7 @@ namespace NeosDynamicAssetInfo
     {
         public override string Name => "NeosDynamicAssetInfo";
         public override string Author => "mpmxyz";
-        public override string Version => "1.0.0";
+        public override string Version => "1.1.0";
         public override string Link => "https://github.com/mpmxyz/NeosDynamicAssetInfo/";
         public override void OnEngineInit()
         {
@@ -31,7 +30,7 @@ namespace NeosDynamicAssetInfo
         private const string URL_PREFIX = "url";
         private const string ASSET_PREFIX = "asset";
 
-        private static void AttachGeneralAssetInfo(Slot slot, Type mainAssetType, IEnumerable<IAssetProvider> allAssets)
+        private static void AttachGeneralAssetInfo(Slot slot, Type mainAssetType, IList<IAssetProvider> allAssets)
         {
             GetDynamicLocations(slot, out var dv_slot, out var dv_space);
 
