@@ -14,11 +14,40 @@ namespace NeosDynamicAssetInfo
     {
         public override string Name => "NeosDynamicAssetInfo";
         public override string Author => "mpmxyz";
-        public override string Version => "1.1.0";
+        public override string Version => "2.1.0";
         public override string Link => "https://github.com/mpmxyz/NeosDynamicAssetInfo/";
+
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<bool> KEY_ENABLED = new ModConfigurationKey<bool>("enabled", "Enable injecting dynamic variables into imports", () => true);
+
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<bool> KEY_NON_PERSISTENT = new ModConfigurationKey<bool>("nonPersistent", "Prevent attached information from being a permanent part of the asset", () => false);
+
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<bool> KEY_GRABBABLE = new ModConfigurationKey<bool>("grabbable", "Attach reference to grabbable component", () => true);
+
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<bool> KEY_NON_GENERIC_REFERENCES = new ModConfigurationKey<bool>("nonGeneric", "Attach generic IAssetProvider<T> values", () => true);
+
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<bool> KEY_GENERIC_REFERENCES = new ModConfigurationKey<bool>("generic", "Attach generic IAssetProvider<T> values", () => true);
+
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<bool> KEY_URL = new ModConfigurationKey<bool>("url", "Attach asset url", () => true);
+
+        private static NeosDynamicAssetInfoMod Instance;
+
+        private static bool Enabled => Instance.GetConfiguration().GetValue(KEY_ENABLED);
+        private static bool Persistent => !Instance.GetConfiguration().GetValue(KEY_NON_PERSISTENT);
+        private static bool EnableGrabbable => Instance.GetConfiguration().GetValue(KEY_GRABBABLE);
+        private static bool EnableNonGeneric => Instance.GetConfiguration().GetValue(KEY_NON_GENERIC_REFERENCES);
+        private static bool EnableGeneric => Instance.GetConfiguration().GetValue(KEY_GENERIC_REFERENCES);
+        private static bool EnableURL => Instance.GetConfiguration().GetValue(KEY_URL);
+        
+
         public override void OnEngineInit()
         {
-            //TODO: mod options: non-persistent, feature flags, enabled/disabled
+            Instance = this;
             AssetImportHooks.PostImport += AttachGeneralAssetInfo;
         }
 
@@ -32,35 +61,44 @@ namespace NeosDynamicAssetInfo
 
         private static void AttachGeneralAssetInfo(Slot slot, Type mainAssetType, IList<IAssetProvider> allAssets)
         {
-            GetDynamicLocations(slot, out var dv_slot, out var dv_space);
-
-            var grabbable = slot.GetComponent<Grabbable>();
-            if (grabbable != null)
+            if (Enabled)
             {
-                AttachReference(dv_slot, dv_space, GRABBABLE_NAME, grabbable);
-            }
+                GetDynamicLocations(slot, out var dv_slot, out var dv_space);
 
-            AttachValue(dv_slot, dv_space, ASSET_COUNT_NAME, allAssets.Count());
-
-            int i = 0;
-            foreach (IAssetProvider asset in allAssets)
-            {
-                AttachReference(dv_slot, dv_space, ASSET_PREFIX + i, asset);
-
-                foreach (Type assetType in EnumerateAllGenericInterfaceVariants(asset.GetType(), typeof(IAssetProvider<>)))
+                var grabbable = slot.GetComponent<Grabbable>();
+                if (grabbable != null && EnableGrabbable)
                 {
-                    typeof(NeosDynamicAssetInfoMod)
-                        .GetMethod(nameof(AttachReference), BindingFlags.NonPublic | BindingFlags.Static)
-                        .MakeGenericMethod(assetType)
-                        .Invoke(null, new object[] { dv_slot, dv_space, ASSET_PREFIX + i, asset, false });
+                    AttachReference(dv_slot, dv_space, GRABBABLE_NAME, grabbable);
                 }
 
-                if (asset is IStaticAssetProvider staticAsset)
-                {
-                    AttachValue(dv_slot, dv_space, URL_PREFIX + i, staticAsset.URL);
-                }
+                AttachValue(dv_slot, dv_space, ASSET_COUNT_NAME, allAssets.Count());
 
-                i++;
+                int i = 0;
+                foreach (IAssetProvider asset in allAssets)
+                {
+                    if (EnableNonGeneric)
+                    {
+                        AttachReference(dv_slot, dv_space, ASSET_PREFIX + i, asset);
+                    }
+
+                    if (EnableGeneric)
+                    {
+                        foreach (Type assetType in EnumerateAllGenericInterfaceVariants(asset.GetType(), typeof(IAssetProvider<>)))
+                        {
+                            typeof(NeosDynamicAssetInfoMod)
+                                .GetMethod(nameof(AttachReference), BindingFlags.NonPublic | BindingFlags.Static)
+                                .MakeGenericMethod(assetType)
+                                .Invoke(null, new object[] { dv_slot, dv_space, ASSET_PREFIX + i, asset, false });
+                        }
+                    }
+
+                    if (asset is IStaticAssetProvider staticAsset && EnableURL)
+                    {
+                        AttachValue(dv_slot, dv_space, URL_PREFIX + i, staticAsset.URL);
+                    }
+
+                    i++;
+                }
             }
         }
 
@@ -77,68 +115,52 @@ namespace NeosDynamicAssetInfo
 
         private static void GetDynamicLocations(Slot slot, out Slot dv_slot, out DynamicVariableSpace dv_space)
         {
-            dv_space = GetDynamicVariableSpace(slot);
+            dv_space = GetDynamicVariableSpace(slot, out var spaceWasCreated);
 
             if (!dv_space.TryReadValue(DV_SLOT_NAME, out dv_slot) || dv_slot == null)
             {
-                dv_slot = slot.AddSlot(DV_SLOT_NAME);
-                if (!dv_space.TryWriteValue(DV_SLOT_NAME, dv_slot))
-                {
-                    var dv = dv_slot.CreateReferenceVariable(DV_SLOT_NAME, dv_slot);
-                    dv.UpdateLinking(); //is missing in CreateReferenceVariable
-                }
+                dv_slot = slot.AddSlot(DV_SLOT_NAME, Persistent);
+                AttachReference(dv_slot, dv_space, DV_SLOT_NAME, dv_slot);
+            }
+            if (spaceWasCreated)
+            {
+                dv_slot.DestroyWhenDestroyed(dv_space);
             }
         }
-        private static DynamicVariableSpace GetDynamicVariableSpace(Slot slot)
+        private static DynamicVariableSpace GetDynamicVariableSpace(Slot slot, out bool wasCreated)
         {
             var space = slot.FindSpace(SPACE_NAME);
 
             if (space == null)
             {
                 space = slot.AttachComponent<DynamicVariableSpace>();
+                space.Persistent = Persistent;
                 space.SpaceName.Value = SPACE_NAME;
+                wasCreated = true;
+            }
+            else
+            {
+                wasCreated = false;
             }
 
             return space;
         }
 
-        private static void AttachValue<T>(Slot dv_slot, DynamicVariableSpace dv_space, string name, T value, bool indexed = false)
+        private static void AttachValue<T>(Slot dv_slot, DynamicVariableSpace dv_space, string name, T value)
         {
-            if (indexed)
-            {
-                name = GetIndexedName<T>(dv_space, name);
-            }
-
             if (!dv_space.TryWriteValue(name, value))
             {
                 dv_slot.CreateVariable(name, value);
             }
         }
 
-        private static void AttachReference<T>(Slot dv_slot, DynamicVariableSpace dv_space, string name, T value, bool indexed = false) where T : class, IWorldElement
+        private static void AttachReference<T>(Slot dv_slot, DynamicVariableSpace dv_space, string name, T value) where T : class, IWorldElement
         {
-            if (indexed)
-            {
-                name = GetIndexedName<T>(dv_space, name);
-            }
-
             if (!dv_space.TryWriteValue(name, value))
             {
                 var dv = dv_slot.CreateReferenceVariable(name, value);
                 dv.UpdateLinking(); //missing in CreateReferenceVariable
             }
-        }
-
-        private static string GetIndexedName<T>(DynamicVariableSpace dv_space, string name)
-        {
-            var index = 0;
-            string indexedName;
-            do
-            {
-                indexedName = $"name{index}";
-                index++;
-            } while (dv_space.TryReadValue<T>(indexedName, out var ignored));
-            return indexedName;
         }
     }
 }
