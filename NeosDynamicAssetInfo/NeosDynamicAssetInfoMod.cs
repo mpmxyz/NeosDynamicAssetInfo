@@ -43,7 +43,6 @@ namespace NeosDynamicAssetInfo
         private static bool EnableNonGeneric => Instance.GetConfiguration().GetValue(KEY_NON_GENERIC_REFERENCES);
         private static bool EnableGeneric => Instance.GetConfiguration().GetValue(KEY_GENERIC_REFERENCES);
         private static bool EnableURL => Instance.GetConfiguration().GetValue(KEY_URL);
-        
 
         public override void OnEngineInit()
         {
